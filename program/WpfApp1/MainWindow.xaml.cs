@@ -24,38 +24,6 @@ namespace WpfApp1
 
         }
 
-        private void ReloadDataFromCurrTable()
-        {
-            if (outputGrid.ItemsSource is List<CCase>)
-            {
-                ReloadData<CCase>();
-            }
-            else if (outputGrid.ItemsSource is List<Cpu>)
-            {
-                ReloadData<Cpu>();
-            }
-            else if (outputGrid.ItemsSource is List<Gpu>)
-            {
-                ReloadData<Gpu>();
-            }
-            else if (outputGrid.ItemsSource is List<Mboard>)
-            {
-                ReloadData<Mboard>();
-            }
-            else if (outputGrid.ItemsSource is List<PowerSup>)
-            {
-                ReloadData<PowerSup>();
-            }
-            else if (outputGrid.ItemsSource is List<Ram>)
-            {
-                ReloadData<Ram>();
-            }
-            else if (outputGrid.ItemsSource is List<Storage>)
-            {
-                ReloadData<Storage>();
-            }
-        }
-
         private void RowEdit(object sender, DataGridRowEditEndingEventArgs e)
         {
             if (e.EditAction == DataGridEditAction.Commit)
