@@ -1,0 +1,23 @@
+﻿<Window x:Class="WpfApp1.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WpfApp1"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800" MinWidth="800" MinHeight="470" MaxWidth="800" MaxHeight="450" ResizeMode="NoResize">
+    <Grid x:Name="mainGrid" MinWidth="800" MinHeight="437" MaxWidth="800" MaxHeight="437" Height="437">
+        <Button x:Name="buttonCase" Content="Корпус" HorizontalAlignment="Left" Height="40" Margin="10,117,0,0" VerticalAlignment="Top" Width="137" Click="buttonCase_Click"/>
+        <Button x:Name="cpuButton" Content="Процесор" HorizontalAlignment="Left" Height="40" Margin="10,162,0,0" VerticalAlignment="Top" Width="137" Click="cpuButton_Click"/>
+        <Button x:Name="gpuButton" Content="Відеокарта" HorizontalAlignment="Left" Height="40" Margin="10,207,0,0" VerticalAlignment="Top" Width="137" Click="gpuButton_Click"/>
+        <Button x:Name="mBoardButton" Content="Мат. Плата" HorizontalAlignment="Left" Height="40" Margin="10,252,0,0" VerticalAlignment="Top" Width="137" Click="mBoardButton_Click"/>
+        <Button x:Name="powerSupButton" Content="Блок Живлення" HorizontalAlignment="Left" Height="40" Margin="10,297,0,0" VerticalAlignment="Top" Width="137" Click="powerSupButton_Click"/>
+        <Button x:Name="ramButton" Content="RAM" HorizontalAlignment="Left" Height="40" Margin="10,342,0,0" VerticalAlignment="Top" Width="137" Click="ramButton_Click"/>
+        <Button x:Name="storageButton" Content="Накопичувач пам'яті" HorizontalAlignment="Left" Height="40" Margin="10,387,0,0" VerticalAlignment="Top" Width="137" Click="storageButton_Click"/>
+        <DataGrid x:Name="outputGrid" HorizontalAlignment="Left" Height="310" Margin="152,117,0,0" VerticalAlignment="Top" Width="638" d:ItemsSource="{d:SampleData ItemCount=5}" AutoGenerateColumns="True" RowEditEnding="RowEdit"/>
+        <TextBox x:Name="SearchTextBox" HorizontalAlignment="Left" Height="35" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="647" FontSize="14"/>
+        <Button x:Name="SearchButton" Content="Пошук" HorizontalAlignment="Left" Height="35" Margin="662,10,0,0" VerticalAlignment="Top" Width="128" Click="Button_Click"/>
+        <Button x:Name="addButton" Content="Додати елемент" HorizontalAlignment="Left" Height="40" Margin="10,57,0,0" VerticalAlignment="Top" Width="137" Click="addButton_Click"/>
+        <Button x:Name="dellButton" Content="Видалити елемент" HorizontalAlignment="Left" Height="40" Margin="152,57,0,0" VerticalAlignment="Top" Width="137" Click="dellButton_Click"/>
+    </Grid>
+</Window>
