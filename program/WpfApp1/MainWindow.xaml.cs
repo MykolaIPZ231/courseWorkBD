@@ -11,6 +11,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Microsoft.EntityFrameworkCore;
 using ClassLibrary1;
+using System.Reflection;
 
 namespace WpfApp1
 {
@@ -18,41 +19,114 @@ namespace WpfApp1
     {
         CourseWorkContext context = new CourseWorkContext();
 
+        private Type currentType;
+
+        private List<Button> loadButtons;
+
+        private readonly Dictionary<string, Type> _typeMapping = new Dictionary<string, Type>
+        {
+            { "CCase", typeof(CCase) },
+            { "Cpu", typeof(Cpu) },
+            { "Gpu", typeof(Gpu) },
+            { "Mboard", typeof(Mboard) },
+            { "PowerSup", typeof(PowerSup) },
+            { "Ram", typeof(Ram) },
+            { "Storage", typeof(Storage) }
+        };
+        private readonly Dictionary<Type, Func<string, Delegate>> _searchPredicates = new Dictionary<Type, Func<string, Delegate>>
+        {
+            { typeof(CCase), searchText => (Func<CCase, bool>)(c =>
+                c.CaseBrand.ToLower().Contains(searchText) ||
+                c.CaseModel.ToLower().Contains(searchText) ||
+                c.CaseFormFactor.ToLower().Contains(searchText)) },
+            { typeof(Cpu), searchText => (Func<Cpu, bool>)(c =>
+                c.CpuBrand.ToLower().Contains(searchText) ||
+                c.CpuModel.ToLower().Contains(searchText)) },
+            { typeof(Gpu), searchText => (Func<Gpu, bool>)(c =>
+                c.GpuBrand.ToLower().Contains(searchText) ||
+                c.GpuModel.ToLower().Contains(searchText)) },
+            { typeof(Mboard), searchText => (Func<Mboard, bool>)(c =>
+                c.MboardBrand.ToLower().Contains(searchText) ||
+                c.MboardModel.ToLower().Contains(searchText)) },
+            { typeof(PowerSup), searchText => (Func<PowerSup, bool>)(c =>
+                c.PowerSupBrand.ToLower().Contains(searchText) ||
+                c.PowerSupModel.ToLower().Contains(searchText) ||
+                c.PowerSupEfficincy.ToLower().Contains(searchText)) },
+            { typeof(Ram), searchText => (Func<Ram, bool>)(c =>
+                c.RamBrand.ToLower().Contains(searchText) ||
+                c.RamModel.ToLower().Contains(searchText) ||
+                c.RamType.ToLower().Contains(searchText)) },
+            { typeof(Storage), searchText => (Func<Storage, bool>)(c =>
+                c.StorageBrand.ToLower().Contains(searchText) ||
+                c.StorageModel.ToLower().Contains(searchText) ||
+                c.StorageType.ToLower().Contains(searchText)) }
+        };
+
         public MainWindow()
         {
             InitializeComponent();
-
+            InitializeLoadButtons();
         }
 
-        private void ReloadDataFromCurrTable()
+        private void InitializeLoadButtons()
         {
-            if (outputGrid.ItemsSource is List<CCase>)
+            loadButtons = new List<Button> { buttonCase, cpuButton, gpuButton, mBoardButton, powerSupButton, ramButton, storageButton };
+
+            buttonCase.Tag = "CCase";
+            cpuButton.Tag = "Cpu";
+            gpuButton.Tag = "Gpu";
+            mBoardButton.Tag = "Mboard";
+            powerSupButton.Tag = "PowerSup";
+            ramButton.Tag = "Ram";
+            storageButton.Tag = "Storage";
+
+            foreach (var btn in loadButtons)
             {
-                ReloadData<CCase>();
+                btn.Click += LoadDataButton_Click;
             }
-            else if (outputGrid.ItemsSource is List<Cpu>)
+        }
+
+        private void LoadData<T>() where T : class
+        {
+            outputGrid.ItemsSource = context.Set<T>().ToList();
+            currentType = typeof(T);
+        }
+
+        private void LoadDataButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button clickedButton && clickedButton.Tag is string tag)
             {
-                ReloadData<Cpu>();
+                if (_typeMapping.TryGetValue(tag, out var type))
+                {
+                    var method = this.GetType().GetMethod("LoadData", BindingFlags.NonPublic | BindingFlags.Instance);
+                    var genericMethod = method.MakeGenericMethod(type);
+                    genericMethod.Invoke(this, null);
+                }
             }
-            else if (outputGrid.ItemsSource is List<Gpu>)
+        }
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            string searchText = SearchTextBox.Text.ToLower();
+
+            if (currentType == null)
             {
-                ReloadData<Gpu>();
+                return;
             }
-            else if (outputGrid.ItemsSource is List<Mboard>)
+
+            var method = this.GetType().GetMethod("LoadData", BindingFlags.NonPublic | BindingFlags.Instance);
+            var genericMethod = method.MakeGenericMethod(currentType);
+
+            if (string.IsNullOrEmpty(searchText))
             {
-                ReloadData<Mboard>();
+                genericMethod.Invoke(this, new object[] { null });
             }
-            else if (outputGrid.ItemsSource is List<PowerSup>)
+            else
             {
-                ReloadData<PowerSup>();
-            }
-            else if (outputGrid.ItemsSource is List<Ram>)
-            {
-                ReloadData<Ram>();
-            }
-            else if (outputGrid.ItemsSource is List<Storage>)
-            {
-                ReloadData<Storage>();
+                if (_searchPredicates.TryGetValue(currentType, out var predicateFactory))
+                {
+                    var predicate = predicateFactory(searchText);
+                    genericMethod.Invoke(this, new object[] { predicate });
+                }
             }
         }
 
@@ -104,196 +178,53 @@ namespace WpfApp1
             }
         }
 
-        private void ReloadData<T>() where T : class
-        {
-            outputGrid.ItemsSource = AddDellClass.ReloadCurrentData<T>(context);
-        }
         private void DellMethod<T>() where T : class
         {
-            if(outputGrid.SelectedItem is T selectedItem && outputGrid.ItemsSource is List<T> items)
+            if (outputGrid.SelectedItem is T selectedItem && outputGrid.ItemsSource is List<T> items)
             {
                 outputGrid.ItemsSource = AddDellClass.DellRow(items, selectedItem, context);
             }
         }
+
         private void AddMethod<T>() where T : class, new()
         {
-            if(outputGrid.ItemsSource is List<T> items)
+            if (outputGrid.ItemsSource is List<T> items)
             {
                 var newItem = new T();
                 context.Set<T>().Add(newItem);
                 context.SaveChanges();
 
-                ReloadData<T>();
-            }
-        }
-
-        private void buttonCase_Click(object sender, RoutedEventArgs e)
-        {
-            ReloadData<CCase>();
-            List<CCase> Ccase = context.CCases.ToList();
-            outputGrid.ItemsSource = Ccase;
-        }
-
-        private void cpuButton_Click(object sender, RoutedEventArgs e)
-        {
-            ReloadData<Cpu>();
-            List<Cpu> cpu = context.Cpus.ToList();
-            outputGrid.ItemsSource = cpu;
-        }
-
-        private void gpuButton_Click(object sender, RoutedEventArgs e)
-        {
-            ReloadData<Gpu>();
-            List<Gpu> gpu = context.Gpus.ToList();
-            outputGrid.ItemsSource = gpu;
-        }
-
-        private void mBoardButton_Click(object sender, RoutedEventArgs e)
-        {
-            ReloadData<Mboard>();
-            List<Mboard> mBoard = context.Mboards.ToList();
-            outputGrid.ItemsSource = mBoard;
-        }
-
-        private void powerSupButton_Click(object sender, RoutedEventArgs e)
-        {
-            ReloadData<PowerSup>();
-            List<PowerSup> powerSup = context.PowerSups.ToList();
-            outputGrid.ItemsSource = powerSup;
-        }
-
-        private void ramButton_Click(object sender, RoutedEventArgs e)
-        {
-            ReloadData<Ram>();
-            List<Ram> ram = context.Rams.ToList();
-            outputGrid.ItemsSource = ram;
-        }
-
-        private void storageButton_Click(object sender, RoutedEventArgs e)
-        {
-            ReloadData<Storage>();
-            List<Storage> storage = context.Storages.ToList();
-            outputGrid.ItemsSource = storage;
-        }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            string searchText = SearchTextBox.Text.ToLower();
-
-            if (outputGrid.ItemsSource is List<CCase> cases)
-            {
-                outputGrid.ItemsSource = cases.Where(c =>
-                    c.CaseBrand.ToLower().Contains(searchText) ||
-                    c.CaseModel.ToLower().Contains(searchText) ||
-                    c.CaseFormFactor.ToLower().Contains(searchText)
-                    ).ToList();
-            }
-            else if(outputGrid.ItemsSource is List<Cpu> cpu)
-            {
-                outputGrid.ItemsSource = cpu.Where(c =>
-                    c.CpuBrand.ToLower().Contains(searchText) ||
-                    c.CpuModel.ToLower().Contains(searchText)
-                ).ToList();
-            }
-            else if(outputGrid.ItemsSource is List<Gpu> gpu)
-            {
-                outputGrid.ItemsSource = gpu.Where(c =>
-                    c.GpuBrand.ToLower().Contains(searchText) ||
-                    c.GpuModel.ToLower().Contains(searchText)
-                ).ToList();
-            }
-            else if(outputGrid.ItemsSource is List<Mboard> mBoard)
-            {
-                outputGrid.ItemsSource = mBoard.Where(c =>
-                    c.MboardBrand.ToLower().Contains(searchText) ||
-                    c.MboardModel.ToLower().Contains(searchText)
-                ).ToList();
-            }
-            else if(outputGrid.ItemsSource is List<PowerSup> powerSup)
-            {
-                outputGrid.ItemsSource = powerSup.Where(c =>
-                    c.PowerSupModel.ToLower().Contains(searchText) ||
-                    c.PowerSupBrand.ToLower().Contains(searchText) ||
-                    c.PowerSupEfficincy.ToLower().Contains(searchText)
-                ).ToList();
-            }
-            else if(outputGrid.ItemsSource is List<Ram> ram)
-            {
-                outputGrid.ItemsSource = ram.Where(c => 
-                    c.RamModel.ToLower().Contains(searchText) ||
-                    c.RamBrand.ToLower().Contains(searchText) ||
-                    c.RamType.ToLower().Contains(searchText)
-                ).ToList();
-            }
-            else if(outputGrid.ItemsSource is List<Storage> storage)
-            {
-                outputGrid.ItemsSource = storage.Where(c =>
-                    c.StorageBrand.ToLower().Contains(searchText) ||
-                    c.StorageModel.ToLower().Contains(searchText) ||
-                    c.StorageType.ToLower().Contains(searchText)
-                    ).ToList();
-            }
-
-            if (string.IsNullOrEmpty(searchText))
-            {
-                if(outputGrid.ItemsSource is List<CCase>)
-                {
-                    buttonCase_Click(null, null);
-                }
-                else if(outputGrid.ItemsSource is List<Cpu>)
-                {
-                    cpuButton_Click(null, null);
-                }
-                else if(outputGrid.ItemsSource is List<Gpu>)
-                {
-                    gpuButton_Click(null, null);
-                }
-                else if(outputGrid.ItemsSource is List<Mboard>)
-                {
-                    mBoardButton_Click(null, null);
-                }
-                else if(outputGrid.ItemsSource is List<PowerSup>)
-                {
-                    powerSupButton_Click(null, null);
-                }
-                else if(outputGrid.ItemsSource is List<Ram>)
-                {
-                    ramButton_Click(null, null);
-                }
-                else if(outputGrid.ItemsSource is List<Storage>)
-                {
-                    storageButton_Click(null, null);
-                }
+                LoadData<T>();
             }
         }
 
         private void addButton_Click(object sender, RoutedEventArgs e)
         {
-            if (outputGrid.ItemsSource is List<CCase>)
+            if (currentType == typeof(CCase))
             {
                 AddMethod<CCase>();
             }
-            else if (outputGrid.ItemsSource is List<Cpu>)
+            else if (currentType == typeof(Cpu))
             {
                 AddMethod<Cpu>();
             }
-            else if( outputGrid.ItemsSource is List<Gpu>)
+            else if (currentType == typeof(Gpu))
             {
                 AddMethod<Gpu>();
             }
-            else if (outputGrid.ItemsSource is List<Mboard>)
+            else if (currentType == typeof(Mboard))
             {
                 AddMethod<Mboard>();
             }
-            else if (outputGrid.ItemsSource is List<PowerSup>)
+            else if (currentType == typeof(PowerSup))
             {
                 AddMethod<PowerSup>();
             }
-            else if (outputGrid.ItemsSource is List<Ram>)
+            else if (currentType == typeof(Ram))
             {
                 AddMethod<Ram>();
             }
-            else if (outputGrid.ItemsSource is List<Storage>)
+            else if (currentType == typeof(Storage))
             {
                 AddMethod<Storage>();
             }
@@ -301,31 +232,31 @@ namespace WpfApp1
 
         private void dellButton_Click(object sender, RoutedEventArgs e)
         {
-            if (outputGrid.ItemsSource is List<CCase>)
+            if (currentType == typeof(CCase))
             {
                 DellMethod<CCase>();
             }
-            else if ( outputGrid.ItemsSource is List<Cpu>)
+            else if (currentType == typeof(Cpu))
             {
-                DellMethod<Cpu>(); 
+                DellMethod<Cpu>();
             }
-            else if (outputGrid.ItemsSource is List<Gpu>)
+            else if (currentType == typeof(Gpu))
             {
                 DellMethod<Gpu>();
             }
-            else if (outputGrid.ItemsSource is List<Mboard>)
+            else if (currentType == typeof(Mboard))
             {
                 DellMethod<Mboard>();
             }
-            else if (outputGrid.ItemsSource is List<PowerSup>)
+            else if (currentType == typeof(PowerSup))
             {
                 DellMethod<PowerSup>();
             }
-            else if (outputGrid.ItemsSource is List<Ram>)
+            else if (currentType == typeof(Ram))
             {
                 DellMethod<Ram>();
             }
-            else if (outputGrid.ItemsSource is List<Storage>)
+            else if (currentType == typeof(Storage))
             {
                 DellMethod<Storage>();
             }
