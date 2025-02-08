@@ -26,33 +26,10 @@ namespace WpfApp1
 
         private void ReloadDataFromCurrTable()
         {
-            if (outputGrid.ItemsSource is List<CCase>)
+            var itemType = outputGrid.ItemsSource?.GetType().GetGenericArguments().FirstOrDefault();
+            if (itemType != null)
             {
-                ReloadData<CCase>();
-            }
-            else if (outputGrid.ItemsSource is List<Cpu>)
-            {
-                ReloadData<Cpu>();
-            }
-            else if (outputGrid.ItemsSource is List<Gpu>)
-            {
-                ReloadData<Gpu>();
-            }
-            else if (outputGrid.ItemsSource is List<Mboard>)
-            {
-                ReloadData<Mboard>();
-            }
-            else if (outputGrid.ItemsSource is List<PowerSup>)
-            {
-                ReloadData<PowerSup>();
-            }
-            else if (outputGrid.ItemsSource is List<Ram>)
-            {
-                ReloadData<Ram>();
-            }
-            else if (outputGrid.ItemsSource is List<Storage>)
-            {
-                ReloadData<Storage>();
+                var method = typeof(MainWindow).GetMethod("ReloadData", new[] { itemType });
             }
         }
 
@@ -269,66 +246,26 @@ namespace WpfApp1
 
         private void addButton_Click(object sender, RoutedEventArgs e)
         {
-            if (outputGrid.ItemsSource is List<CCase>)
-            {
-                AddMethod<CCase>();
-            }
-            else if (outputGrid.ItemsSource is List<Cpu>)
-            {
-                AddMethod<Cpu>();
-            }
-            else if( outputGrid.ItemsSource is List<Gpu>)
-            {
-                AddMethod<Gpu>();
-            }
-            else if (outputGrid.ItemsSource is List<Mboard>)
-            {
-                AddMethod<Mboard>();
-            }
-            else if (outputGrid.ItemsSource is List<PowerSup>)
-            {
-                AddMethod<PowerSup>();
-            }
-            else if (outputGrid.ItemsSource is List<Ram>)
-            {
-                AddMethod<Ram>();
-            }
-            else if (outputGrid.ItemsSource is List<Storage>)
-            {
-                AddMethod<Storage>();
-            }
+            var itemType = outputGrid.ItemsSource?.GetType().GetGenericArguments().FirstOrDefault();
+            if (itemType == typeof(CCase)) AddMethod<CCase>();
+            else if (itemType == typeof(Cpu)) AddMethod<Cpu>();
+            else if (itemType == typeof(Gpu)) AddMethod<Gpu>();
+            else if (itemType == typeof(Mboard)) AddMethod<Mboard>();
+            else if (itemType == typeof(PowerSup)) AddMethod<PowerSup>();
+            else if (itemType == typeof(Ram)) AddMethod<Ram>();
+            else if (itemType == typeof(Storage)) AddMethod<Storage>();
         }
 
         private void dellButton_Click(object sender, RoutedEventArgs e)
         {
-            if (outputGrid.ItemsSource is List<CCase>)
-            {
-                DellMethod<CCase>();
-            }
-            else if ( outputGrid.ItemsSource is List<Cpu>)
-            {
-                DellMethod<Cpu>(); 
-            }
-            else if (outputGrid.ItemsSource is List<Gpu>)
-            {
-                DellMethod<Gpu>();
-            }
-            else if (outputGrid.ItemsSource is List<Mboard>)
-            {
-                DellMethod<Mboard>();
-            }
-            else if (outputGrid.ItemsSource is List<PowerSup>)
-            {
-                DellMethod<PowerSup>();
-            }
-            else if (outputGrid.ItemsSource is List<Ram>)
-            {
-                DellMethod<Ram>();
-            }
-            else if (outputGrid.ItemsSource is List<Storage>)
-            {
-                DellMethod<Storage>();
-            }
+            var itemType = outputGrid.ItemsSource?.GetType().GetGenericArguments().FirstOrDefault();
+            if (itemType == typeof(CCase)) DellMethod<CCase>();
+            else if (itemType == typeof(Cpu)) DellMethod<Cpu>();
+            else if (itemType == typeof(Gpu)) DellMethod<Gpu>();
+            else if (itemType == typeof(Mboard)) DellMethod<Mboard>();
+            else if (itemType == typeof(PowerSup)) DellMethod<PowerSup>();
+            else if (itemType == typeof(Ram)) DellMethod<Ram>();
+            else if (itemType == typeof(Storage)) DellMethod<Storage>();
         }
     }
 }
