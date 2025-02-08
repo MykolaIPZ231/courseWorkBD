@@ -16,13 +16,17 @@ namespace WpfApp1
 {
     public partial class MainWindow : Window
     {
-        private readonly CourseWorkContext _context = new CourseWorkContext();
+        private readonly DataService _dataService;
         private readonly Dictionary<Type, Action> _reloadMethods;
 
         public MainWindow()
         {
             InitializeComponent();
 
+            // Ініціалізація DataService
+            _dataService = new DataService(new CourseWorkContext());
+
+            // Ініціалізація словника для методів оновлення даних
             _reloadMethods = new Dictionary<Type, Action>
         {
             { typeof(CCase), () => ReloadData<CCase>() },
@@ -35,11 +39,13 @@ namespace WpfApp1
         };
         }
 
+        // Загальний метод для оновлення даних у DataGrid
         private void ReloadData<T>() where T : class
         {
-            outputGrid.ItemsSource = _context.Set<T>().ToList();
+            outputGrid.ItemsSource = _dataService.ReloadData<T>();
         }
 
+        // Метод для оновлення даних у DataGrid залежно від поточного типу
         private void ReloadDataFromCurrTable()
         {
             var itemType = outputGrid.ItemsSource?.GetType().GetGenericArguments().FirstOrDefault();
@@ -49,6 +55,7 @@ namespace WpfApp1
             }
         }
 
+        // Обгортка для редагування рядка
         private void RowEditWrapper(object sender, DataGridRowEditEndingEventArgs e)
         {
             if (e.EditAction == DataGridEditAction.Commit)
@@ -59,10 +66,8 @@ namespace WpfApp1
                 {
                     outputGrid.CommitEdit(DataGridEditingUnit.Row, true);
 
-                    // Отримуємо тип елемента, який редагується
                     var itemType = e.Row.Item.GetType();
 
-                    // Викликаємо узагальнений метод через рефлексію
                     var method = typeof(MainWindow).GetMethod(nameof(RowEdit), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                     var genericMethod = method.MakeGenericMethod(itemType);
                     genericMethod.Invoke(this, new object[] { sender, e });
@@ -74,39 +79,41 @@ namespace WpfApp1
             }
         }
 
+        // Узагальнений метод для редагування рядка
         private void RowEdit<T>(object sender, DataGridRowEditEndingEventArgs e) where T : class
         {
             if (e.Row.Item is T updatedItem)
             {
-                _context.Update(updatedItem);
-                _context.SaveChanges();
+                _dataService.Update(updatedItem);
             }
         }
 
+        // Метод для додавання нового рядка
         private void AddMethod<T>() where T : class, new()
         {
             var newItem = new T();
-            _context.Set<T>().Add(newItem);
-            _context.SaveChanges();
+            _dataService.Add(newItem);
             ReloadData<T>();
         }
 
+        // Метод для видалення рядка
         private void DellMethod<T>() where T : class
         {
             if (outputGrid.SelectedItem is T selectedItem)
             {
-                _context.Set<T>().Remove(selectedItem);
-                _context.SaveChanges();
+                _dataService.Delete(selectedItem);
                 ReloadData<T>();
             }
         }
 
+        // Метод для пошуку даних
         private void SearchData<T>(string searchText, Func<T, bool> filter) where T : class
         {
-            var items = _context.Set<T>().ToList();
-            outputGrid.ItemsSource = items.Where(filter).ToList();
+            var items = _dataService.SearchData(searchText, filter);
+            outputGrid.ItemsSource = items;
         }
 
+        // Обробники подій для кнопок
         private void buttonCase_Click(object sender, RoutedEventArgs e)
         {
             ReloadData<CCase>();
